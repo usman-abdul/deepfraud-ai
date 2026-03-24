@@ -6,11 +6,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 
 # ── Config ──────────────────────────────────────────────────────────────────
-MODEL_PATH = "../models/isof_model.joblib"
-DEMO_DATA_PATH = "../data/demo/transactions_for_demo.csv"
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_PATH = BASE_DIR / "models" / "isof_model.joblib"
+DEMO_DATA_PATH = BASE_DIR / "data" / "demo" / "transactions_for_demo.csv"
 
 # ── Load model ───────────────────────────────────────────────────────────────
 @st.cache_resource
@@ -67,8 +69,8 @@ def build_reason(row, mean_amount):
     parts = []
     if row["Amount"] > mean_amount * 5:
         parts.append("Unusually high amount")
-    if row["anomaly_score"] > 0.7:
-        parts.append("Anomalous pattern detected")
+    if row["flag"] == "Suspicious":
+        parts.append("Behavioral pattern anomaly detected")
     return "; ".join(parts) if parts else "No unusual behavior"
 
 
@@ -88,7 +90,7 @@ if st.button("🚀 Run Fraud Detection"):
 
     # Severity tier
     df_processed["severity"] = np.where(
-        df_processed["anomaly_score"] > 0.9, "Critical",
+        df_processed["anomaly_score"] > 0.75, "Critical",
         np.where(df_processed["flag"] == "Suspicious", "Moderate", "Low")
     )
 
